@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MassTrack" />
+  <title>MassTrack 🔥</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body, #root { height: 100%; }
+    body { background: #0a0a0f; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    select option { background: #1a1a2e; color: #fff; }
+    @keyframes fadeIn { from { opacity:0; transform:translateX(-50%) translateY(-8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    ::-webkit-scrollbar { width: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+import { useState, useRef, useEffect, useCallback } from "react";
+
+const ACTIVITY_LEVELS = [
+  { label: "Sédentaire", value: 1.2, desc: "Peu ou pas d'exercice" },
+  { label: "Légèrement actif", value: 1.375, desc: "1–3 jours/semaine" },
+  { label: "Modérément actif", value: 1.55, desc: "3–5 jours/semaine" },
+  { label: "Très actif", value: 1.725, desc: "6–7 jours/semaine" },
+  { label: "Extrêmement actif", value: 1.9, desc: "Athlète / travail physique" },
+];
+
+const MEAL_TYPES = ["Petit-déjeuner", "Déjeuner", "Dîner", "Collation"];
+
+// ── localStorage helpers ──────────────────────────────────────────────────────
+const LS = {
+  get: (key, fallback = null) => {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+  },
+  set: (key, value) => {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  },
+};
+
+function CalBar({ label, value, max, color }) {
+  const pct = Math.min((value / max) * 100, 100);
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
+        <span style={{ fontSize: 12, color, fontFamily: "'Syne', sans-serif", fontWeight: 700 }}>{Math.round(value)}g / {max}g</span>
+      </div>
+      <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 6, overflow: "hidden" }}>
+        <div style={{
+          height: "100%", width: `${pct}%`, background: color, borderRadius: 6,
+          transition: "width 0.7s cubic-bezier(.4,0,.2,1)",
+          boxShadow: `0 0 8px ${color}80`
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function Toast({ toast }) {
+  return (
+    <div style={{
+      position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
+      background: toast.type === "err" ? "#ef4444" : "#22c55e",
+      color: "#fff", padding: "10px 20px", borderRadius: 12,
+      fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14,
+      zIndex: 1000, boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+      animation: "fadeIn 0.3s ease", whiteSpace: "nowrap"
+    }}>{toast.msg}</div>
+  );
+}
+
+function MacroCard({ result, setResult, onAdd, onRetry, retryLabel }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#fff", margin: 0, fontSize: 18 }}>{result.name}</h3>
+          {result.per_unit && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>pour {result.per_unit}</span>}
+          {result.details && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", margin: "4px 0 0", fontStyle: "italic" }}>{result.details}</p>}
+        </div>
+        <span style={{
+          fontSize: 11, padding: "3px 10px", borderRadius: 20, flexShrink: 0, marginLeft: 10,
+          background: result.confidence === "haute" ? "rgba(34,197,94,0.15)" : "rgba(249,115,22,0.15)",
+          color: result.confidence === "haute" ? "#22c55e" : "#f97316",
+          fontWeight: 600, fontFamily: "'DM Sans', sans-serif"
+        }}>Confiance {result.confidence}</span>
+      </div>
+
+      {result.note && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", margin: "8px 0 12px", fontStyle: "italic" }}>ℹ️ {result.note}</p>}
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 16 }}>
+        <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 14, padding: "14px 16px", gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Énergie totale</span>
+          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 28, color: "#ef4444" }}>{result.calories} <span style={{ fontSize: 14, fontWeight: 600 }}>kcal</span></span>
+        </div>
+        {[
+          { label: "Protéines", value: result.proteins, color: "#f97316", bg: "rgba(249,115,22,0.1)", border: "rgba(249,115,22,0.2)" },
+          { label: "Glucides", value: result.carbs, color: "#3b82f6", bg: "rgba(59,130,246,0.1)", border: "rgba(59,130,246,0.2)" },
+          { label: "Lipides", value: result.fats, color: "#a855f7", bg: "rgba(168,85,247,0.1)", border: "rgba(168,85,247,0.2)" },
+          { label: "Fibres", value: result.fiber, color: "#22c55e", bg: "rgba(34,197,94,0.1)", border: "rgba(34,197,94,0.2)" },
+        ].map(({ label, value, color, bg, border }) => (
+          <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 14, padding: "12px 14px" }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, color }}>{value ?? "–"}<span style={{ fontSize: 12, fontWeight: 600 }}>g</span></div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={labelStyle}>Type de repas</label>
+        <select value={result.meal} onChange={e => setResult(p => ({ ...p, meal: e.target.value }))} style={inputStyle}>
+          {MEAL_TYPES.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+      </div>
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onRetry} style={{ flex: 1, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>
+          {retryLabel}
+        </button>
+        <button onClick={() => onAdd(result)} style={{ flex: 2, padding: 12, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #f97316, #ef4444)", color: "#fff", cursor: "pointer", fontFamily: "'Syne', sans-serif", fontWeight: 700, boxShadow: "0 4px 16px #f9731640" }}>
+          Ajouter ✓
+        </button>
+      </div>
+      <style>{`select option{background:#1a1a2e;color:#fff;}`}</style>
+    </div>
+  );
+}
+
+function App() {
+  // ── State initialisé depuis localStorage ────────────────────────────────────
+  const [profile, setProfile] = useState(() =>
+    LS.get("mt_profile", { age: "", weight: "", height: "", activity: 1.55, sex: "homme" })
+  );
+  const [goal, setGoal] = useState(() => LS.get("mt_goal", null));
+  const [meals, setMeals] = useState(() => LS.get("mt_meals", []));
+  const [screen, setScreen] = useState(() => LS.get("mt_goal", null) ? "home" : "profile");
+
+  const [addMode, setAddMode] = useState("manual");
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoResult, setPhotoResult] = useState(null);
+  const [manualFood, setManualFood] = useState({ name: "", quantity: "", unit: "g", brand: "", meal: "Déjeuner" });
+  const [manualLoading, setManualLoading] = useState(false);
+  const [manualResult, setManualResult] = useState(null);
+  const [toast, setToast] = useState(null);
+  const today = new Date().toDateString();
+  const fileRef = useRef();
+
+  // ── Sauvegarde automatique dès que les données changent ─────────────────────
+  useEffect(() => { LS.set("mt_profile", profile); }, [profile]);
+  useEffect(() => { LS.set("mt_goal", goal); }, [goal]);
+  useEffect(() => { LS.set("mt_meals", meals); }, [meals]);
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  const showToast = (msg, type = "ok") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 2800);
+  };
+
+  const calcGoal = useCallback(() => {
+    const { age, weight, height, activity, sex } = profile;
+    if (!age || !weight || !height) return;
+    const a = parseFloat(age), w = parseFloat(weight), h = parseFloat(height), act = parseFloat(activity);
+    const bmr = sex === "homme"
+      ? 88.362 + 13.397 * w + 4.799 * h - 5.677 * a
+      : 447.593 + 9.247 * w + 3.098 * h - 4.330 * a;
+    const tdee = bmr * act;
+    const target = Math.round(tdee + 400);
+    const proteins = Math.round(w * 2.2);
+    const fats = Math.round((target * 0.25) / 9);
+    const carbs = Math.round((target - proteins * 4 - fats * 9) / 4);
+    const newGoal = { target, proteins, carbs, fats, tdee: Math.round(tdee) };
+    setGoal(newGoal);
+    showToast("Profil sauvegardé ✓");
+    setScreen("home");
+  }, [profile]);
+
+  const addMeal = (food) => {
+    const entry = {
+      ...food,
+      id: Date.now(),
+      day: today,
+      time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+    };
+    setMeals(prev => [...prev, entry]);
+    setPhotoResult(null);
+    setManualFood({ name: "", quantity: "", unit: "g", brand: "", meal: "Déjeuner" });
+    setManualResult(null);
+    showToast(`${food.name} ajouté !`);
+    setScreen("home");
+  };
+
+  const lookupFood = async () => {
+    const { name, quantity, unit, brand } = manualFood;
+    if (!name || !quantity) return;
+    setManualLoading(true);
+    setManualResult(null);
+    try {
+      const prompt = `Calcule les valeurs nutritionnelles pour:
+- Aliment: ${name}
+- Quantité: ${quantity} ${unit}
+${brand ? `- Marque: ${brand}` : ""}
+
+Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks:
+{"name":"nom complet","calories":nombre,"proteins":nombre,"carbs":nombre,"fats":nombre,"fiber":nombre,"per_unit":"${quantity}${unit}","confidence":"haute/moyenne/basse","note":"info utile si besoin"}
+Toutes les valeurs en nombres entiers. Calories en kcal, macros en grammes.`;
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.map(c => c.text || "").join("") || "";
+      const clean = text.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(clean);
+      setManualResult({ ...parsed, meal: manualFood.meal });
+    } catch {
+      showToast("Aliment non reconnu, réessaie", "err");
+    }
+    setManualLoading(false);
+  };
+
+  const analyzePhoto = async (file) => {
+    setPhotoLoading(true);
+    setPhotoResult(null);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result.split(",")[1];
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1000,
+            messages: [{
+              role: "user",
+              content: [
+                { type: "image", source: { type: "base64", media_type: file.type, data: base64 } },
+                { type: "text", text: `Analyse cet aliment ou repas. Réponds UNIQUEMENT en JSON valide, sans markdown, sans backticks.
+Format exact:
+{"name":"nom du plat","calories":nombre,"proteins":nombre,"carbs":nombre,"fats":nombre,"fiber":nombre,"details":"courte description","confidence":"haute/moyenne/basse"}
+Estime les macros pour la portion visible dans l'image.` }
+              ]
+            }]
+          })
+        });
+        const data = await res.json();
+        const text = data.content?.map(c => c.text || "").join("") || "";
+        const clean = text.replace(/```json|```/g, "").trim();
+        const parsed = JSON.parse(clean);
+        setPhotoResult({ ...parsed, meal: "Déjeuner" });
+      } catch {
+        showToast("Erreur d'analyse, réessaie", "err");
+      }
+      setPhotoLoading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ── Calculs journaliers ─────────────────────────────────────────────────────
+  const todayMeals = meals.filter(m => m.day === today);
+  const totalCal   = todayMeals.reduce((s, m) => s + (m.calories || 0), 0);
+  const totalProt  = todayMeals.reduce((s, m) => s + (m.proteins || 0), 0);
+  const totalCarbs = todayMeals.reduce((s, m) => s + (m.carbs || 0), 0);
+  const totalFats  = todayMeals.reduce((s, m) => s + (m.fats || 0), 0);
+  const pctCal     = goal ? Math.min((totalCal / goal.target) * 100, 100) : 0;
+  const remaining  = goal ? goal.target - totalCal : 0;
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // PROFIL
+  // ══════════════════════════════════════════════════════════════════════════════
+  if (screen === "profile") {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0a0a0f", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+        <div style={{ width: "100%", maxWidth: 440 }}>
+          <div style={{ textAlign: "center", marginBottom: 36 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 64, height: 64, borderRadius: 20, background: "linear-gradient(135deg, #f97316, #ef4444)", marginBottom: 16, fontSize: 28, boxShadow: "0 0 32px #f9731640" }}>🔥</div>
+            <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 800, color: "#fff", margin: 0 }}>MassTrack</h1>
+            <p style={{ color: "rgba(255,255,255,0.4)", marginTop: 6, fontSize: 14 }}>Tes calories pour la prise de masse</p>
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 24 }}>
+            <div style={{ marginBottom: 18 }}>
+              <label style={labelStyle}>Sexe</label>
+              <div style={{ display: "flex", gap: 10 }}>
+                {["homme", "femme"].map(s => (
+                  <button key={s} onClick={() => setProfile(p => ({ ...p, sex: s }))} style={{
+                    flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid",
+                    borderColor: profile.sex === s ? "#f97316" : "rgba(255,255,255,0.1)",
+                    background: profile.sex === s ? "rgba(249,115,22,0.15)" : "transparent",
+                    color: profile.sex === s ? "#f97316" : "rgba(255,255,255,0.5)",
+                    fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14,
+                    cursor: "pointer", textTransform: "capitalize", transition: "all 0.2s"
+                  }}>{s}</button>
+                ))}
+              </div>
+            </div>
+
+            {[
+              { key: "age", label: "Âge", placeholder: "ex: 22", unit: "ans" },
+              { key: "weight", label: "Poids", placeholder: "ex: 75", unit: "kg" },
+              { key: "height", label: "Taille", placeholder: "ex: 178", unit: "cm" },
+            ].map(({ key, label, placeholder, unit }) => (
+              <div key={key} style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>{label}</label>
+                <div style={{ position: "relative" }}>
+                  <input type="number" placeholder={placeholder} value={profile[key]}
+                    onChange={e => setProfile(p => ({ ...p, [key]: e.target.value }))}
+                    style={inputStyle} />
+                  <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>{unit}</span>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={labelStyle}>Niveau d'activité</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {ACTIVITY_LEVELS.map(a => (
+                  <button key={a.value} onClick={() => setProfile(p => ({ ...p, activity: a.value }))} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    padding: "10px 14px", borderRadius: 12, border: "1px solid",
+                    borderColor: profile.activity === a.value ? "#f97316" : "rgba(255,255,255,0.08)",
+                    background: profile.activity === a.value ? "rgba(249,115,22,0.12)" : "rgba(255,255,255,0.02)",
+                    cursor: "pointer", transition: "all 0.2s", textAlign: "left"
+                  }}>
+                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 13, color: profile.activity === a.value ? "#f97316" : "rgba(255,255,255,0.7)" }}>{a.label}</span>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{a.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={calcGoal} disabled={!profile.age || !profile.weight || !profile.height} style={{
+              width: "100%", padding: "14px 0", borderRadius: 14, border: "none",
+              background: "linear-gradient(135deg, #f97316, #ef4444)",
+              color: "#fff", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16,
+              cursor: "pointer", boxShadow: "0 4px 24px #f9731640",
+              opacity: (!profile.age || !profile.weight || !profile.height) ? 0.4 : 1,
+              transition: "opacity 0.2s"
+            }}>
+              {goal ? "💾 Mettre à jour mon profil" : "Calculer mon objectif 🚀"}
+            </button>
+
+            {goal && (
+              <button onClick={() => setScreen("home")} style={{
+                width: "100%", marginTop: 10, padding: "12px 0", borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.1)", background: "transparent",
+                color: "rgba(255,255,255,0.5)", fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 600, fontSize: 14, cursor: "pointer"
+              }}>← Retour au tableau de bord</button>
+            )}
+          </div>
+        </div>
+        <style>{`input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0} input[type=number]{-moz-appearance:textfield} select option{background:#1a1a2e;color:#fff;}`}</style>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // AJOUTER UN REPAS
+  // ══════════════════════════════════════════════════════════════════════════════
+  if (screen === "add") {
+    return (
+      <div style={{ minHeight: "100vh", background: "#0a0a0f", padding: 20, fontFamily: "'DM Sans', sans-serif" }}>
+        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+        {toast && <Toast toast={toast} />}
+        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+            <button onClick={() => setScreen("home")} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#fff", width: 40, height: 40, borderRadius: 12, cursor: "pointer", fontSize: 18 }}>←</button>
+            <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#fff", margin: 0, fontSize: 22 }}>Ajouter un repas</h2>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
+            {[{ key: "manual", label: "✏️ Saisie" }, { key: "photo", label: "📸 Photo IA" }].map(m => (
+              <button key={m.key} onClick={() => { setAddMode(m.key); setPhotoResult(null); setManualResult(null); }} style={{
+                flex: 1, padding: "12px 0", borderRadius: 14, border: "1px solid",
+                borderColor: addMode === m.key ? "#f97316" : "rgba(255,255,255,0.1)",
+                background: addMode === m.key ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.03)",
+                color: addMode === m.key ? "#f97316" : "rgba(255,255,255,0.5)",
+                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14,
+                cursor: "pointer", transition: "all 0.2s"
+              }}>{m.label}</button>
+            ))}
+          </div>
+
+          {/* MODE PHOTO */}
+          {addMode === "photo" && (
+            <div>
+              <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }}
+                onChange={e => e.target.files[0] && analyzePhoto(e.target.files[0])} />
+              {!photoResult && !photoLoading && (
+                <button onClick={() => fileRef.current.click()} style={{
+                  width: "100%", padding: "48px 0", borderRadius: 20,
+                  border: "2px dashed rgba(249,115,22,0.3)", background: "rgba(249,115,22,0.05)",
+                  color: "rgba(255,255,255,0.6)", fontSize: 14, cursor: "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+                  fontFamily: "'DM Sans', sans-serif"
+                }}>
+                  <span style={{ fontSize: 48 }}>📷</span>
+                  <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#f97316", fontSize: 16 }}>Prendre une photo</span>
+                  <span>ou importer depuis ta galerie</span>
+                </button>
+              )}
+              {photoLoading && (
+                <div style={{ textAlign: "center", padding: 48 }}>
+                  <div style={{ fontSize: 48, animation: "spin 1s linear infinite", display: "inline-block" }}>🔍</div>
+                  <p style={{ color: "rgba(255,255,255,0.5)", marginTop: 16 }}>Analyse IA en cours…</p>
+                </div>
+              )}
+              {photoResult && (
+                <MacroCard result={photoResult} setResult={setPhotoResult} onAdd={addMeal}
+                  onRetry={() => { setPhotoResult(null); fileRef.current.click(); }} retryLabel="Nouvelle photo" />
+              )}
+            </div>
+          )}
+
+          {/* MODE SAISIE */}
+          {addMode === "manual" && (
+            <div>
+              {!manualResult ? (
+                <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 20 }}>
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={labelStyle}>Nom de l'aliment *</label>
+                    <input type="text" placeholder="ex: Blanc de poulet, Riz basmati, Yaourt…"
+                      value={manualFood.name}
+                      onChange={e => setManualFood(p => ({ ...p, name: e.target.value }))}
+                      style={inputStyle} />
+                  </div>
+                  <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                    <div style={{ flex: 2 }}>
+                      <label style={labelStyle}>Quantité *</label>
+                      <input type="number" placeholder="ex: 150"
+                        value={manualFood.quantity}
+                        onChange={e => setManualFood(p => ({ ...p, quantity: e.target.value }))}
+                        style={inputStyle} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>Unité</label>
+                      <select value={manualFood.unit} onChange={e => setManualFood(p => ({ ...p, unit: e.target.value }))} style={inputStyle}>
+                        {["g", "ml", "cl", "portion", "tranche", "unité"].map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 14 }}>
+                    <label style={labelStyle}>Marque <span style={{ color: "rgba(255,255,255,0.2)", textTransform: "none", letterSpacing: 0, fontSize: 11 }}>(optionnel)</span></label>
+                    <input type="text" placeholder="ex: Danone, Bjorg, Fleury Michon…"
+                      value={manualFood.brand}
+                      onChange={e => setManualFood(p => ({ ...p, brand: e.target.value }))}
+                      style={inputStyle} />
+                  </div>
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={labelStyle}>Type de repas</label>
+                    <select value={manualFood.meal} onChange={e => setManualFood(p => ({ ...p, meal: e.target.value }))} style={inputStyle}>
+                      {MEAL_TYPES.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  <button onClick={lookupFood} disabled={!manualFood.name || !manualFood.quantity || manualLoading} style={{
+                    width: "100%", padding: 14, borderRadius: 14, border: "none",
+                    background: "linear-gradient(135deg, #f97316, #ef4444)",
+                    color: "#fff", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16,
+                    cursor: "pointer", boxShadow: "0 4px 20px #f9731640",
+                    opacity: (!manualFood.name || !manualFood.quantity || manualLoading) ? 0.4 : 1,
+                    transition: "opacity 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 10
+                  }}>
+                    {manualLoading
+                      ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⚙️</span> Calcul en cours…</>
+                      : "🔍 Calculer les calories"}
+                  </button>
+                </div>
+              ) : (
+                <MacroCard result={manualResult} setResult={setManualResult} onAdd={addMeal}
+                  onRetry={() => setManualResult(null)} retryLabel="← Modifier" />
+              )}
+            </div>
+          )}
+        </div>
+        <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}} select option{background:#1a1a2e;color:#fff;} input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0} input[type=number]{-moz-appearance:textfield}`}</style>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // HOME
+  // ══════════════════════════════════════════════════════════════════════════════
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0a0f", fontFamily: "'DM Sans', sans-serif", paddingBottom: 110 }}>
+      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+      {toast && <Toast toast={toast} />}
+
+      <div style={{ padding: "20px 20px 0", maxWidth: 480, margin: "0 auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <div>
+            <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#fff", margin: 0, fontSize: 26 }}>MassTrack 🔥</h1>
+            <p style={{ color: "rgba(255,255,255,0.3)", margin: "2px 0 0", fontSize: 12 }}>
+              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+            </p>
+          </div>
+          <button onClick={() => setScreen("profile")} style={{
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.6)", padding: "6px 14px", borderRadius: 10,
+            cursor: "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif"
+          }}>⚙️ Profil</button>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 480, margin: "0 auto", padding: "16px 20px 0" }}>
+
+        {/* Carte calories */}
+        <div style={{
+          background: "linear-gradient(135deg, rgba(249,115,22,0.12), rgba(239,68,68,0.08))",
+          border: "1px solid rgba(249,115,22,0.2)", borderRadius: 24, padding: 24, marginBottom: 14,
+          position: "relative", overflow: "hidden"
+        }}>
+          <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(249,115,22,0.06)", pointerEvents: "none" }} />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+            <div>
+              <p style={{ color: "rgba(255,255,255,0.4)", margin: 0, fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Calories aujourd'hui</p>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 4 }}>
+                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 42, color: "#fff" }}>{Math.round(totalCal)}</span>
+                <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 16 }}>/ {goal?.target} kcal</span>
+              </div>
+              <p style={{ margin: "4px 0 0", fontSize: 13, color: remaining >= 0 ? "#22c55e" : "#ef4444", fontWeight: 600 }}>
+                {remaining >= 0 ? `${Math.round(remaining)} kcal restantes` : `${Math.abs(Math.round(remaining))} kcal dépassées`}
+              </p>
+            </div>
+            <div style={{ position: "relative" }}>
+              <svg width={90} height={90} style={{ transform: "rotate(-90deg)" }}>
+                <circle cx={45} cy={45} r={38} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={9} />
+                <circle cx={45} cy={45} r={38} fill="none"
+                  stroke={pctCal > 100 ? "#ef4444" : "#f97316"} strokeWidth={9}
+                  strokeDasharray={2 * Math.PI * 38}
+                  strokeDashoffset={2 * Math.PI * 38 * (1 - pctCal / 100)}
+                  strokeLinecap="round"
+                  style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1)" }} />
+              </svg>
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16, color: "#fff" }}>{Math.round(pctCal)}%</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ height: 8, background: "rgba(255,255,255,0.08)", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{
+              height: "100%", width: `${pctCal}%`,
+              background: pctCal > 100 ? "#ef4444" : "linear-gradient(90deg, #f97316, #ef4444)",
+              borderRadius: 8, transition: "width 0.8s cubic-bezier(.4,0,.2,1)",
+              boxShadow: "0 0 12px #f9731650"
+            }} />
+          </div>
+        </div>
+
+        {/* Macros */}
+        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 20, marginBottom: 14 }}>
+          <p style={{ color: "rgba(255,255,255,0.4)", margin: "0 0 14px", fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Macronutriments</p>
+          {goal && <>
+            <CalBar label="Protéines" value={totalProt} max={goal.proteins} color="#f97316" />
+            <CalBar label="Glucides" value={totalCarbs} max={goal.carbs} color="#3b82f6" />
+            <CalBar label="Lipides" value={totalFats} max={goal.fats} color="#a855f7" />
+          </>}
+        </div>
+
+        {/* Objectif */}
+        {goal && (
+          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 16, marginBottom: 18 }}>
+            <p style={{ color: "rgba(255,255,255,0.4)", margin: "0 0 12px", fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>🎯 Objectif prise de masse</p>
+            <div style={{ display: "flex", justifyContent: "space-around" }}>
+              {[
+                { label: "Maintenance", value: goal.tdee, unit: "kcal" },
+                { label: "Surplus", value: "+400", unit: "kcal" },
+                { label: "Objectif", value: goal.target, unit: "kcal", highlight: true },
+              ].map(({ label, value, unit, highlight }) => (
+                <div key={label} style={{ textAlign: "center" }}>
+                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 18, color: highlight ? "#f97316" : "#fff" }}>{value}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{unit}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Journal */}
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ color: "rgba(255,255,255,0.4)", margin: "0 0 12px", fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Journal du jour</p>
+          {todayMeals.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 32, color: "rgba(255,255,255,0.2)", fontSize: 14 }}>
+              Aucun repas ajouté.<br />Commence à logger ! 💪
+            </div>
+          ) : (
+            MEAL_TYPES.map(mealType => {
+              const items = todayMeals.filter(m => m.meal === mealType);
+              if (!items.length) return null;
+              const mealCal = items.reduce((s, i) => s + (i.calories || 0), 0);
+              return (
+                <div key={mealType} style={{ marginBottom: 14 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{mealType}</span>
+                    <span style={{ fontSize: 12, color: "#f97316", fontWeight: 600 }}>{Math.round(mealCal)} kcal</span>
+                  </div>
+                  {items.map(item => (
+                    <div key={item.id} style={{
+                      background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
+                      borderRadius: 14, padding: "12px 16px", marginBottom: 8,
+                      display: "flex", justifyContent: "space-between", alignItems: "center"
+                    }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontWeight: 600, color: "#fff", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span>
+                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>{item.time}</span>
+                        </div>
+                        <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
+                          {item.proteins > 0 && <span style={{ fontSize: 11, color: "#f97316" }}>P: {item.proteins}g</span>}
+                          {item.carbs > 0 && <span style={{ fontSize: 11, color: "#3b82f6" }}>G: {item.carbs}g</span>}
+                          {item.fats > 0 && <span style={{ fontSize: 11, color: "#a855f7" }}>L: {item.fats}g</span>}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, marginLeft: 8 }}>
+                        <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#f97316", fontSize: 16 }}>{item.calories}</span>
+                        <button onClick={() => setMeals(prev => prev.filter(m => m.id !== item.id))}
+                          style={{ background: "rgba(239,68,68,0.1)", border: "none", color: "#ef4444", width: 28, height: 28, borderRadius: 8, cursor: "pointer", fontSize: 16 }}>×</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      <button onClick={() => setScreen("add")} style={{
+        position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)",
+        background: "linear-gradient(135deg, #f97316, #ef4444)",
+        border: "none", color: "#fff", borderRadius: 50, padding: "16px 32px",
+        fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16,
+        cursor: "pointer", boxShadow: "0 8px 32px rgba(249,115,22,0.5)",
+        display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap"
+      }}>
+        <span style={{ fontSize: 20 }}>+</span> Ajouter un repas
+      </button>
+
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}} select option{background:#1a1a2e;color:#fff;}`}</style>
+    </div>
+  );
+}
+
+const labelStyle = {
+  display: "block", marginBottom: 6, fontSize: 12,
+  color: "rgba(255,255,255,0.4)", textTransform: "uppercase",
+  letterSpacing: 1, fontFamily: "'DM Sans', sans-serif"
+};
+
+const inputStyle = {
+  width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15,
+  fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box",
+  appearance: "none", WebkitAppearance: "none"
+};
+
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+</html>
