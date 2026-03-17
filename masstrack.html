@@ -1,679 +1,577 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="MassTrack" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="MassTrack"/>
   <title>MassTrack 🔥</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, #root { height: 100%; }
-    body { background: #0a0a0f; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
-    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
-    select option { background: #1a1a2e; color: #fff; }
-    @keyframes fadeIn { from { opacity:0; transform:translateX(-50%) translateY(-8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
-    @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-    ::-webkit-scrollbar { width: 0; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;background:#0a0a0f;color:#fff;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    input[type=number]{-moz-appearance:textfield}
+    ::-webkit-scrollbar{width:0}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+    .screen{min-height:100vh;padding-bottom:100px;animation:slideUp 0.3s ease}
+    .screen-center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+
+    /* inputs */
+    .inp{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;appearance:none;-webkit-appearance:none}
+    .inp:focus{border-color:rgba(249,115,22,0.5)}
+    select.inp option{background:#1a1a2e;color:#fff}
+    label.lbl{display:block;margin-bottom:6px;font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px}
+
+    /* buttons */
+    .btn-primary{width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#f97316,#ef4444);color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 4px 24px rgba(249,115,22,0.4)}
+    .btn-ghost{width:100%;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.5);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
+    .btn-sex{flex:1;padding:10px 0;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.5);font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;text-transform:capitalize;transition:all 0.2s}
+    .btn-sex.active{border-color:#f97316;background:rgba(249,115,22,0.15);color:#f97316}
+    .btn-activity{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);cursor:pointer;width:100%;transition:all 0.2s;text-align:left}
+    .btn-activity.active{border-color:#f97316;background:rgba(249,115,22,0.12)}
+    .btn-activity .name{font-weight:600;font-size:13px;color:rgba(255,255,255,0.7)}
+    .btn-activity.active .name{color:#f97316}
+    .btn-activity .desc{font-size:11px;color:rgba(255,255,255,0.3)}
+    .btn-mode{flex:1;padding:12px 0;border-radius:14px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.5);font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all 0.2s}
+    .btn-mode.active{border-color:#f97316;background:rgba(249,115,22,0.15);color:#f97316}
+
+    /* cards */
+    .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:20px}
+    .card-orange{background:linear-gradient(135deg,rgba(249,115,22,0.12),rgba(239,68,68,0.08));border:1px solid rgba(249,115,22,0.2);border-radius:24px;padding:24px;margin-bottom:14px;position:relative;overflow:hidden}
+    .card-dark{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:20px;margin-bottom:14px}
+
+    /* meal item */
+    .meal-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .meal-name{font-weight:600;font-size:14px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .meal-time{font-size:10px;color:rgba(255,255,255,0.25);flex-shrink:0}
+    .macro-tag{font-size:11px}
+
+    /* toast */
+    #toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:fadeIn 0.3s ease;white-space:nowrap;display:none}
+
+    /* fab */
+    #fab{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f97316,#ef4444);border:none;color:#fff;border-radius:50px;padding:16px 32px;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 8px 32px rgba(249,115,22,0.5);display:flex;align-items:center;gap:8px;white-space:nowrap;z-index:100}
+
+    /* progress bar */
+    .pbar-track{height:8px;background:rgba(255,255,255,0.08);border-radius:8px;overflow:hidden;margin-bottom:10px}
+    .pbar-fill{height:100%;border-radius:8px;transition:width 0.7s cubic-bezier(.4,0,.2,1)}
+
+    /* photo zone */
+    .photo-zone{width:100%;padding:48px 0;border-radius:20px;border:2px dashed rgba(249,115,22,0.3);background:rgba(249,115,22,0.05);color:rgba(255,255,255,0.6);font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px}
+    .photo-loading{text-align:center;padding:48px}
+
+    /* macro result grid */
+    .macro-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+    .macro-cell{border-radius:14px;padding:12px 14px}
+    .macro-cell .val{font-family:'Syne',sans-serif;font-weight:800;font-size:20px}
+    .macro-cell .lbl2{font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px}
+    .macro-total{border-radius:14px;padding:14px 16px;grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2)}
+
+    .section-label{color:rgba(255,255,255,0.4);margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:1px}
+    .flex-row{display:flex;gap:10px}
+    .flex-col{display:flex;flex-direction:column;gap:8px}
+    .mb14{margin-bottom:14px}
+    .mb16{margin-bottom:16px}
+    .mb18{margin-bottom:18px}
+    .mb20{margin-bottom:20px}
+    .mb24{margin-bottom:24px}
+    .mb36{margin-bottom:36px}
+    .mt10{margin-top:10px}
+    .logo-box{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#f97316,#ef4444);margin-bottom:16px;font-size:28px;box-shadow:0 0 32px rgba(249,115,22,0.25)}
+    .maxw{max-width:480px;margin:0 auto;padding:0 20px}
+    .profile-maxw{width:100%;max-width:440px}
   </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-import { useState, useRef, useEffect, useCallback } from "react";
+<div id="toast"></div>
+<div id="app"></div>
 
-const ACTIVITY_LEVELS = [
-  { label: "Sédentaire", value: 1.2, desc: "Peu ou pas d'exercice" },
-  { label: "Légèrement actif", value: 1.375, desc: "1–3 jours/semaine" },
-  { label: "Modérément actif", value: 1.55, desc: "3–5 jours/semaine" },
-  { label: "Très actif", value: 1.725, desc: "6–7 jours/semaine" },
-  { label: "Extrêmement actif", value: 1.9, desc: "Athlète / travail physique" },
-];
-
-const MEAL_TYPES = ["Petit-déjeuner", "Déjeuner", "Dîner", "Collation"];
-
-// ── localStorage helpers ──────────────────────────────────────────────────────
+<script>
+// ─── Storage ────────────────────────────────────────────────────────────────
 const LS = {
-  get: (key, fallback = null) => {
-    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
-  },
-  set: (key, value) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
-  },
+  get:(k,d=null)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 };
 
-function CalBar({ label, value, max, color }) {
-  const pct = Math.min((value / max) * 100, 100);
-  return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: "'DM Sans', sans-serif" }}>{label}</span>
-        <span style={{ fontSize: 12, color, fontFamily: "'Syne', sans-serif", fontWeight: 700 }}>{Math.round(value)}g / {max}g</span>
+// ─── State ──────────────────────────────────────────────────────────────────
+let state = {
+  screen: LS.get('mt_goal') ? 'home' : 'profile',
+  profile: LS.get('mt_profile', {age:'',weight:'',height:'',activity:1.55,sex:'homme'}),
+  goal: LS.get('mt_goal', null),
+  meals: LS.get('mt_meals', []),
+  addMode: 'manual',
+  photoResult: null,
+  photoLoading: false,
+  manualFood: {name:'',quantity:'',unit:'g',brand:'',meal:'Déjeuner'},
+  manualResult: null,
+  manualLoading: false,
+};
+
+const save = () => {
+  LS.set('mt_profile', state.profile);
+  LS.set('mt_goal', state.goal);
+  LS.set('mt_meals', state.meals);
+};
+
+const today = new Date().toDateString();
+
+const ACTIVITIES = [
+  {label:'Sédentaire',value:1.2,desc:"Peu ou pas d'exercice"},
+  {label:'Légèrement actif',value:1.375,desc:'1–3 jours/semaine'},
+  {label:'Modérément actif',value:1.55,desc:'3–5 jours/semaine'},
+  {label:'Très actif',value:1.725,desc:'6–7 jours/semaine'},
+  {label:'Extrêmement actif',value:1.9,desc:'Athlète / travail physique'},
+];
+const MEALS = ['Petit-déjeuner','Déjeuner','Dîner','Collation'];
+const UNITS = ['g','ml','cl','portion','tranche','unité'];
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type==='err' ? '#ef4444' : '#22c55e';
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.style.display='none'; }, 2800);
+}
+
+// ─── Render ──────────────────────────────────────────────────────────────────
+function render() {
+  const app = document.getElementById('app');
+  if (state.screen === 'profile') app.innerHTML = renderProfile();
+  else if (state.screen === 'add') app.innerHTML = renderAdd();
+  else app.innerHTML = renderHome();
+  bindEvents();
+}
+
+// ─── PROFILE ─────────────────────────────────────────────────────────────────
+function renderProfile() {
+  const p = state.profile;
+  return `
+  <div class="screen-center">
+    <div class="profile-maxw">
+      <div style="text-align:center" class="mb36">
+        <div class="logo-box">🔥</div>
+        <h1 style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:#fff;margin:0">MassTrack</h1>
+        <p style="color:rgba(255,255,255,0.4);margin-top:6px;font-size:14px">Tes calories pour la prise de masse</p>
       </div>
-      <div style={{ height: 6, background: "rgba(255,255,255,0.08)", borderRadius: 6, overflow: "hidden" }}>
-        <div style={{
-          height: "100%", width: `${pct}%`, background: color, borderRadius: 6,
-          transition: "width 0.7s cubic-bezier(.4,0,.2,1)",
-          boxShadow: `0 0 8px ${color}80`
-        }} />
+      <div class="card">
+        <div class="mb18">
+          <label class="lbl">Sexe</label>
+          <div class="flex-row">
+            <button class="btn-sex ${p.sex==='homme'?'active':''}" data-sex="homme">Homme</button>
+            <button class="btn-sex ${p.sex==='femme'?'active':''}" data-sex="femme">Femme</button>
+          </div>
+        </div>
+        ${[['age','Âge','22','ans'],['weight','Poids','75','kg'],['height','Taille','178','cm']].map(([k,l,ph,u])=>`
+        <div class="mb16">
+          <label class="lbl">${l}</label>
+          <div style="position:relative">
+            <input class="inp" type="number" placeholder="ex: ${ph}" value="${p[k]||''}" data-field="${k}"/>
+            <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.3);font-size:13px">${u}</span>
+          </div>
+        </div>`).join('')}
+        <div class="mb24">
+          <label class="lbl">Niveau d'activité</label>
+          <div class="flex-col">
+            ${ACTIVITIES.map(a=>`
+            <button class="btn-activity ${p.activity==a.value?'active':''}" data-activity="${a.value}">
+              <span class="name">${a.label}</span>
+              <span class="desc">${a.desc}</span>
+            </button>`).join('')}
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-calc" ${!p.age||!p.weight||!p.height?'style="opacity:0.4"':''}>
+          ${state.goal ? '💾 Mettre à jour mon profil' : 'Calculer mon objectif 🚀'}
+        </button>
+        ${state.goal ? `<button class="btn-ghost mt10" id="btn-back-home">← Retour au tableau de bord</button>` : ''}
       </div>
     </div>
-  );
+  </div>`;
 }
 
-function Toast({ toast }) {
-  return (
-    <div style={{
-      position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
-      background: toast.type === "err" ? "#ef4444" : "#22c55e",
-      color: "#fff", padding: "10px 20px", borderRadius: 12,
-      fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14,
-      zIndex: 1000, boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-      animation: "fadeIn 0.3s ease", whiteSpace: "nowrap"
-    }}>{toast.msg}</div>
-  );
+// ─── ADD ─────────────────────────────────────────────────────────────────────
+function renderAdd() {
+  const m = state.addMode;
+  return `
+  <div class="screen" style="padding:20px;padding-bottom:40px">
+    <div class="maxw" style="padding-top:0">
+      <div class="flex-row mb24" style="align-items:center;gap:12px;padding:0">
+        <button id="btn-back" style="background:rgba(255,255,255,0.06);border:none;color:#fff;width:40px;height:40px;border-radius:12px;cursor:pointer;font-size:18px;flex-shrink:0">←</button>
+        <h2 style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;margin:0">Ajouter un repas</h2>
+      </div>
+      <div class="flex-row mb24">
+        <button class="btn-mode ${m==='manual'?'active':''}" data-mode="manual">✏️ Saisie</button>
+        <button class="btn-mode ${m==='photo'?'active':''}" data-mode="photo">📸 Photo IA</button>
+      </div>
+      ${m==='photo' ? renderPhotoMode() : renderManualMode()}
+    </div>
+  </div>`;
 }
 
-function MacroCard({ result, setResult, onAdd, onRetry, retryLabel }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#fff", margin: 0, fontSize: 18 }}>{result.name}</h3>
-          {result.per_unit && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>pour {result.per_unit}</span>}
-          {result.details && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", margin: "4px 0 0", fontStyle: "italic" }}>{result.details}</p>}
-        </div>
-        <span style={{
-          fontSize: 11, padding: "3px 10px", borderRadius: 20, flexShrink: 0, marginLeft: 10,
-          background: result.confidence === "haute" ? "rgba(34,197,94,0.15)" : "rgba(249,115,22,0.15)",
-          color: result.confidence === "haute" ? "#22c55e" : "#f97316",
-          fontWeight: 600, fontFamily: "'DM Sans', sans-serif"
-        }}>Confiance {result.confidence}</span>
+function renderPhotoMode() {
+  if (state.photoLoading) return `
+    <div class="photo-loading">
+      <div style="font-size:48px;animation:spin 1s linear infinite;display:inline-block">🔍</div>
+      <p style="color:rgba(255,255,255,0.5);margin-top:16px">Analyse IA en cours…</p>
+    </div>`;
+  if (state.photoResult) return renderMacroResult(state.photoResult, 'photo');
+  return `
+    <label class="photo-zone" for="photo-input">
+      <span style="font-size:48px">📷</span>
+      <span style="font-family:'Syne',sans-serif;font-weight:700;color:#f97316;font-size:16px">Prendre une photo</span>
+      <span>ou importer depuis ta galerie</span>
+    </label>
+    <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none"/>`;
+}
+
+function renderManualMode() {
+  if (state.manualResult) return renderMacroResult(state.manualResult, 'manual');
+  const f = state.manualFood;
+  return `
+    <div class="card">
+      <div class="mb14">
+        <label class="lbl">Nom de l'aliment *</label>
+        <input class="inp" type="text" id="food-name" placeholder="ex: Blanc de poulet, Riz basmati…" value="${esc(f.name)}"/>
       </div>
-
-      {result.note && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", margin: "8px 0 12px", fontStyle: "italic" }}>ℹ️ {result.note}</p>}
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 16 }}>
-        <div style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 14, padding: "14px 16px", gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Énergie totale</span>
-          <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 28, color: "#ef4444" }}>{result.calories} <span style={{ fontSize: 14, fontWeight: 600 }}>kcal</span></span>
+      <div class="flex-row mb14">
+        <div style="flex:2">
+          <label class="lbl">Quantité *</label>
+          <input class="inp" type="number" id="food-qty" placeholder="ex: 150" value="${esc(f.quantity)}"/>
         </div>
-        {[
-          { label: "Protéines", value: result.proteins, color: "#f97316", bg: "rgba(249,115,22,0.1)", border: "rgba(249,115,22,0.2)" },
-          { label: "Glucides", value: result.carbs, color: "#3b82f6", bg: "rgba(59,130,246,0.1)", border: "rgba(59,130,246,0.2)" },
-          { label: "Lipides", value: result.fats, color: "#a855f7", bg: "rgba(168,85,247,0.1)", border: "rgba(168,85,247,0.2)" },
-          { label: "Fibres", value: result.fiber, color: "#22c55e", bg: "rgba(34,197,94,0.1)", border: "rgba(34,197,94,0.2)" },
-        ].map(({ label, value, color, bg, border }) => (
-          <div key={label} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 14, padding: "12px 14px" }}>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, color }}>{value ?? "–"}<span style={{ fontSize: 12, fontWeight: 600 }}>g</span></div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{label}</div>
-          </div>
-        ))}
+        <div style="flex:1">
+          <label class="lbl">Unité</label>
+          <select class="inp" id="food-unit">
+            ${UNITS.map(u=>`<option value="${u}" ${f.unit===u?'selected':''}>${u}</option>`).join('')}
+          </select>
+        </div>
       </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>Type de repas</label>
-        <select value={result.meal} onChange={e => setResult(p => ({ ...p, meal: e.target.value }))} style={inputStyle}>
-          {MEAL_TYPES.map(m => <option key={m} value={m}>{m}</option>)}
+      <div class="mb14">
+        <label class="lbl">Marque <span style="color:rgba(255,255,255,0.2);text-transform:none;letter-spacing:0;font-size:11px">(optionnel)</span></label>
+        <input class="inp" type="text" id="food-brand" placeholder="ex: Danone, Bjorg, Fleury Michon…" value="${esc(f.brand)}"/>
+      </div>
+      <div class="mb20">
+        <label class="lbl">Type de repas</label>
+        <select class="inp" id="food-meal">
+          ${MEALS.map(ml=>`<option value="${ml}" ${f.meal===ml?'selected':''}>${ml}</option>`).join('')}
         </select>
       </div>
+      <button class="btn-primary" id="btn-lookup" ${!f.name||!f.quantity||state.manualLoading?'style="opacity:0.4"':''}>
+        ${state.manualLoading ? '<span style="animation:spin 1s linear infinite;display:inline-block">⚙️</span> Calcul en cours…' : '🔍 Calculer les calories'}
+      </button>
+    </div>`;
+}
 
-      <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={onRetry} style={{ flex: 1, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>
-          {retryLabel}
+function renderMacroResult(r, source) {
+  return `
+    <div class="card">
+      <div class="flex-row mb16" style="justify-content:space-between;align-items:flex-start">
+        <div style="flex:1;min-width:0">
+          <h3 style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin:0">${esc(r.name)}</h3>
+          ${r.per_unit ? `<span style="font-size:12px;color:rgba(255,255,255,0.35)">pour ${r.per_unit}</span>` : ''}
+          ${r.details ? `<p style="font-size:12px;color:rgba(255,255,255,0.35);margin:4px 0 0;font-style:italic">${esc(r.details)}</p>` : ''}
+        </div>
+        <span style="font-size:11px;padding:3px 10px;border-radius:20px;flex-shrink:0;margin-left:10px;background:${r.confidence==='haute'?'rgba(34,197,94,0.15)':'rgba(249,115,22,0.15)'};color:${r.confidence==='haute'?'#22c55e':'#f97316'};font-weight:600">
+          Confiance ${r.confidence}
+        </span>
+      </div>
+      ${r.note ? `<p style="font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:12px;font-style:italic">ℹ️ ${esc(r.note)}</p>` : ''}
+      <div class="macro-grid">
+        <div class="macro-total">
+          <span style="color:rgba(255,255,255,0.6);font-size:13px">Énergie totale</span>
+          <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:#ef4444">${r.calories} <span style="font-size:14px;font-weight:600">kcal</span></span>
+        </div>
+        ${[
+          {label:'Protéines',val:r.proteins,color:'#f97316',bg:'rgba(249,115,22,0.1)',border:'rgba(249,115,22,0.2)'},
+          {label:'Glucides',val:r.carbs,color:'#3b82f6',bg:'rgba(59,130,246,0.1)',border:'rgba(59,130,246,0.2)'},
+          {label:'Lipides',val:r.fats,color:'#a855f7',bg:'rgba(168,85,247,0.1)',border:'rgba(168,85,247,0.2)'},
+          {label:'Fibres',val:r.fiber,color:'#22c55e',bg:'rgba(34,197,94,0.1)',border:'rgba(34,197,94,0.2)'},
+        ].map(x=>`<div class="macro-cell" style="background:${x.bg};border:1px solid ${x.border}">
+          <div class="val" style="color:${x.color}">${x.val??'–'}<span style="font-size:12px">g</span></div>
+          <div class="lbl2">${x.label}</div>
+        </div>`).join('')}
+      </div>
+      <div class="mb16">
+        <label class="lbl">Type de repas</label>
+        <select class="inp" id="result-meal">
+          ${MEALS.map(ml=>`<option value="${ml}" ${r.meal===ml?'selected':''}>${ml}</option>`).join('')}
+        </select>
+      </div>
+      <div class="flex-row">
+        <button style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.6);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600" id="btn-retry-${source}">
+          ${source==='photo' ? 'Nouvelle photo' : '← Modifier'}
         </button>
-        <button onClick={() => onAdd(result)} style={{ flex: 2, padding: 12, borderRadius: 12, border: "none", background: "linear-gradient(135deg, #f97316, #ef4444)", color: "#fff", cursor: "pointer", fontFamily: "'Syne', sans-serif", fontWeight: 700, boxShadow: "0 4px 16px #f9731640" }}>
+        <button style="flex:2;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#f97316,#ef4444);color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;box-shadow:0 4px 16px rgba(249,115,22,0.4)" id="btn-add-meal">
           Ajouter ✓
         </button>
       </div>
-      <style>{`select option{background:#1a1a2e;color:#fff;}`}</style>
-    </div>
-  );
+    </div>`;
 }
 
-function App() {
-  // ── State initialisé depuis localStorage ────────────────────────────────────
-  const [profile, setProfile] = useState(() =>
-    LS.get("mt_profile", { age: "", weight: "", height: "", activity: 1.55, sex: "homme" })
-  );
-  const [goal, setGoal] = useState(() => LS.get("mt_goal", null));
-  const [meals, setMeals] = useState(() => LS.get("mt_meals", []));
-  const [screen, setScreen] = useState(() => LS.get("mt_goal", null) ? "home" : "profile");
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+function renderHome() {
+  const todayMeals = state.meals.filter(m => m.day === today);
+  const totalCal  = todayMeals.reduce((s,m)=>s+(m.calories||0),0);
+  const totalProt = todayMeals.reduce((s,m)=>s+(m.proteins||0),0);
+  const totalCarbs= todayMeals.reduce((s,m)=>s+(m.carbs||0),0);
+  const totalFats = todayMeals.reduce((s,m)=>s+(m.fats||0),0);
+  const g = state.goal || {};
+  const pct = g.target ? Math.min((totalCal/g.target)*100,100) : 0;
+  const rem = g.target ? g.target - totalCal : 0;
+  const circ = 2*Math.PI*38;
+  const offset = circ*(1-pct/100);
+  const dateStr = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
 
-  const [addMode, setAddMode] = useState("manual");
-  const [photoLoading, setPhotoLoading] = useState(false);
-  const [photoResult, setPhotoResult] = useState(null);
-  const [manualFood, setManualFood] = useState({ name: "", quantity: "", unit: "g", brand: "", meal: "Déjeuner" });
-  const [manualLoading, setManualLoading] = useState(false);
-  const [manualResult, setManualResult] = useState(null);
-  const [toast, setToast] = useState(null);
-  const today = new Date().toDateString();
-  const fileRef = useRef();
-
-  // ── Sauvegarde automatique dès que les données changent ─────────────────────
-  useEffect(() => { LS.set("mt_profile", profile); }, [profile]);
-  useEffect(() => { LS.set("mt_goal", goal); }, [goal]);
-  useEffect(() => { LS.set("mt_meals", meals); }, [meals]);
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
-  const showToast = (msg, type = "ok") => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 2800);
-  };
-
-  const calcGoal = useCallback(() => {
-    const { age, weight, height, activity, sex } = profile;
-    if (!age || !weight || !height) return;
-    const a = parseFloat(age), w = parseFloat(weight), h = parseFloat(height), act = parseFloat(activity);
-    const bmr = sex === "homme"
-      ? 88.362 + 13.397 * w + 4.799 * h - 5.677 * a
-      : 447.593 + 9.247 * w + 3.098 * h - 4.330 * a;
-    const tdee = bmr * act;
-    const target = Math.round(tdee + 400);
-    const proteins = Math.round(w * 2.2);
-    const fats = Math.round((target * 0.25) / 9);
-    const carbs = Math.round((target - proteins * 4 - fats * 9) / 4);
-    const newGoal = { target, proteins, carbs, fats, tdee: Math.round(tdee) };
-    setGoal(newGoal);
-    showToast("Profil sauvegardé ✓");
-    setScreen("home");
-  }, [profile]);
-
-  const addMeal = (food) => {
-    const entry = {
-      ...food,
-      id: Date.now(),
-      day: today,
-      time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
-    };
-    setMeals(prev => [...prev, entry]);
-    setPhotoResult(null);
-    setManualFood({ name: "", quantity: "", unit: "g", brand: "", meal: "Déjeuner" });
-    setManualResult(null);
-    showToast(`${food.name} ajouté !`);
-    setScreen("home");
-  };
-
-  const lookupFood = async () => {
-    const { name, quantity, unit, brand } = manualFood;
-    if (!name || !quantity) return;
-    setManualLoading(true);
-    setManualResult(null);
-    try {
-      const prompt = `Calcule les valeurs nutritionnelles pour:
-- Aliment: ${name}
-- Quantité: ${quantity} ${unit}
-${brand ? `- Marque: ${brand}` : ""}
-
-Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks:
-{"name":"nom complet","calories":nombre,"proteins":nombre,"carbs":nombre,"fats":nombre,"fiber":nombre,"per_unit":"${quantity}${unit}","confidence":"haute/moyenne/basse","note":"info utile si besoin"}
-Toutes les valeurs en nombres entiers. Calories en kcal, macros en grammes.`;
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: prompt }]
-        })
-      });
-      const data = await res.json();
-      const text = data.content?.map(c => c.text || "").join("") || "";
-      const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
-      setManualResult({ ...parsed, meal: manualFood.meal });
-    } catch {
-      showToast("Aliment non reconnu, réessaie", "err");
-    }
-    setManualLoading(false);
-  };
-
-  const analyzePhoto = async (file) => {
-    setPhotoLoading(true);
-    setPhotoResult(null);
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = e.target.result.split(",")[1];
-      try {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 1000,
-            messages: [{
-              role: "user",
-              content: [
-                { type: "image", source: { type: "base64", media_type: file.type, data: base64 } },
-                { type: "text", text: `Analyse cet aliment ou repas. Réponds UNIQUEMENT en JSON valide, sans markdown, sans backticks.
-Format exact:
-{"name":"nom du plat","calories":nombre,"proteins":nombre,"carbs":nombre,"fats":nombre,"fiber":nombre,"details":"courte description","confidence":"haute/moyenne/basse"}
-Estime les macros pour la portion visible dans l'image.` }
-              ]
-            }]
-          })
-        });
-        const data = await res.json();
-        const text = data.content?.map(c => c.text || "").join("") || "";
-        const clean = text.replace(/```json|```/g, "").trim();
-        const parsed = JSON.parse(clean);
-        setPhotoResult({ ...parsed, meal: "Déjeuner" });
-      } catch {
-        showToast("Erreur d'analyse, réessaie", "err");
-      }
-      setPhotoLoading(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // ── Calculs journaliers ─────────────────────────────────────────────────────
-  const todayMeals = meals.filter(m => m.day === today);
-  const totalCal   = todayMeals.reduce((s, m) => s + (m.calories || 0), 0);
-  const totalProt  = todayMeals.reduce((s, m) => s + (m.proteins || 0), 0);
-  const totalCarbs = todayMeals.reduce((s, m) => s + (m.carbs || 0), 0);
-  const totalFats  = todayMeals.reduce((s, m) => s + (m.fats || 0), 0);
-  const pctCal     = goal ? Math.min((totalCal / goal.target) * 100, 100) : 0;
-  const remaining  = goal ? goal.target - totalCal : 0;
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // PROFIL
-  // ══════════════════════════════════════════════════════════════════════════════
-  if (screen === "profile") {
-    return (
-      <div style={{ minHeight: "100vh", background: "#0a0a0f", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-        <div style={{ width: "100%", maxWidth: 440 }}>
-          <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 64, height: 64, borderRadius: 20, background: "linear-gradient(135deg, #f97316, #ef4444)", marginBottom: 16, fontSize: 28, boxShadow: "0 0 32px #f9731640" }}>🔥</div>
-            <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 32, fontWeight: 800, color: "#fff", margin: 0 }}>MassTrack</h1>
-            <p style={{ color: "rgba(255,255,255,0.4)", marginTop: 6, fontSize: 14 }}>Tes calories pour la prise de masse</p>
+  const journalHtml = todayMeals.length===0
+    ? `<div style="text-align:center;padding:32px;color:rgba(255,255,255,0.2);font-size:14px">Aucun repas ajouté.<br/>Commence à logger ! 💪</div>`
+    : MEALS.map(mtype => {
+        const items = todayMeals.filter(m=>m.meal===mtype);
+        if(!items.length) return '';
+        const mCal = items.reduce((s,i)=>s+(i.calories||0),0);
+        return `<div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:rgba(255,255,255,0.6);font-size:13px">${mtype}</span>
+            <span style="font-size:12px;color:#f97316;font-weight:600">${Math.round(mCal)} kcal</span>
           </div>
-
-          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 24 }}>
-            <div style={{ marginBottom: 18 }}>
-              <label style={labelStyle}>Sexe</label>
-              <div style={{ display: "flex", gap: 10 }}>
-                {["homme", "femme"].map(s => (
-                  <button key={s} onClick={() => setProfile(p => ({ ...p, sex: s }))} style={{
-                    flex: 1, padding: "10px 0", borderRadius: 12, border: "1px solid",
-                    borderColor: profile.sex === s ? "#f97316" : "rgba(255,255,255,0.1)",
-                    background: profile.sex === s ? "rgba(249,115,22,0.15)" : "transparent",
-                    color: profile.sex === s ? "#f97316" : "rgba(255,255,255,0.5)",
-                    fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14,
-                    cursor: "pointer", textTransform: "capitalize", transition: "all 0.2s"
-                  }}>{s}</button>
-                ))}
+          ${items.map(item=>`
+          <div class="meal-item">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="meal-name">${esc(item.name)}</span>
+                <span class="meal-time">${item.time}</span>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap">
+                ${item.proteins>0?`<span class="macro-tag" style="color:#f97316">P: ${item.proteins}g</span>`:''}
+                ${item.carbs>0?`<span class="macro-tag" style="color:#3b82f6">G: ${item.carbs}g</span>`:''}
+                ${item.fats>0?`<span class="macro-tag" style="color:#a855f7">L: ${item.fats}g</span>`:''}
               </div>
             </div>
-
-            {[
-              { key: "age", label: "Âge", placeholder: "ex: 22", unit: "ans" },
-              { key: "weight", label: "Poids", placeholder: "ex: 75", unit: "kg" },
-              { key: "height", label: "Taille", placeholder: "ex: 178", unit: "cm" },
-            ].map(({ key, label, placeholder, unit }) => (
-              <div key={key} style={{ marginBottom: 16 }}>
-                <label style={labelStyle}>{label}</label>
-                <div style={{ position: "relative" }}>
-                  <input type="number" placeholder={placeholder} value={profile[key]}
-                    onChange={e => setProfile(p => ({ ...p, [key]: e.target.value }))}
-                    style={inputStyle} />
-                  <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>{unit}</span>
-                </div>
-              </div>
-            ))}
-
-            <div style={{ marginBottom: 24 }}>
-              <label style={labelStyle}>Niveau d'activité</label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {ACTIVITY_LEVELS.map(a => (
-                  <button key={a.value} onClick={() => setProfile(p => ({ ...p, activity: a.value }))} style={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    padding: "10px 14px", borderRadius: 12, border: "1px solid",
-                    borderColor: profile.activity === a.value ? "#f97316" : "rgba(255,255,255,0.08)",
-                    background: profile.activity === a.value ? "rgba(249,115,22,0.12)" : "rgba(255,255,255,0.02)",
-                    cursor: "pointer", transition: "all 0.2s", textAlign: "left"
-                  }}>
-                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 13, color: profile.activity === a.value ? "#f97316" : "rgba(255,255,255,0.7)" }}>{a.label}</span>
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{a.desc}</span>
-                  </button>
-                ))}
-              </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:8px">
+              <span style="font-family:'Syne',sans-serif;font-weight:800;color:#f97316;font-size:16px">${item.calories}</span>
+              <button class="btn-del" data-id="${item.id}" style="background:rgba(239,68,68,0.1);border:none;color:#ef4444;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px">×</button>
             </div>
+          </div>`).join('')}
+        </div>`;
+      }).join('');
 
-            <button onClick={calcGoal} disabled={!profile.age || !profile.weight || !profile.height} style={{
-              width: "100%", padding: "14px 0", borderRadius: 14, border: "none",
-              background: "linear-gradient(135deg, #f97316, #ef4444)",
-              color: "#fff", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16,
-              cursor: "pointer", boxShadow: "0 4px 24px #f9731640",
-              opacity: (!profile.age || !profile.weight || !profile.height) ? 0.4 : 1,
-              transition: "opacity 0.2s"
-            }}>
-              {goal ? "💾 Mettre à jour mon profil" : "Calculer mon objectif 🚀"}
-            </button>
-
-            {goal && (
-              <button onClick={() => setScreen("home")} style={{
-                width: "100%", marginTop: 10, padding: "12px 0", borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.1)", background: "transparent",
-                color: "rgba(255,255,255,0.5)", fontFamily: "'DM Sans', sans-serif",
-                fontWeight: 600, fontSize: 14, cursor: "pointer"
-              }}>← Retour au tableau de bord</button>
-            )}
-          </div>
+  return `
+  <div class="screen">
+    <div style="padding:20px 20px 0;max-width:480px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div>
+          <h1 style="font-family:'Syne',sans-serif;font-weight:800;font-size:26px;margin:0">MassTrack 🔥</h1>
+          <p style="color:rgba(255,255,255,0.3);margin:2px 0 0;font-size:12px">${dateStr}</p>
         </div>
-        <style>{`input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0} input[type=number]{-moz-appearance:textfield} select option{background:#1a1a2e;color:#fff;}`}</style>
+        <button id="btn-profile" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);padding:6px 14px;border-radius:10px;cursor:pointer;font-size:12px">⚙️ Profil</button>
       </div>
-    );
-  }
+    </div>
+    <div class="maxw" style="padding-top:16px">
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // AJOUTER UN REPAS
-  // ══════════════════════════════════════════════════════════════════════════════
-  if (screen === "add") {
-    return (
-      <div style={{ minHeight: "100vh", background: "#0a0a0f", padding: 20, fontFamily: "'DM Sans', sans-serif" }}>
-        <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-        {toast && <Toast toast={toast} />}
-        <div style={{ maxWidth: 480, margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-            <button onClick={() => setScreen("home")} style={{ background: "rgba(255,255,255,0.06)", border: "none", color: "#fff", width: 40, height: 40, borderRadius: 12, cursor: "pointer", fontSize: 18 }}>←</button>
-            <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#fff", margin: 0, fontSize: 22 }}>Ajouter un repas</h2>
-          </div>
-
-          <div style={{ display: "flex", gap: 10, marginBottom: 24 }}>
-            {[{ key: "manual", label: "✏️ Saisie" }, { key: "photo", label: "📸 Photo IA" }].map(m => (
-              <button key={m.key} onClick={() => { setAddMode(m.key); setPhotoResult(null); setManualResult(null); }} style={{
-                flex: 1, padding: "12px 0", borderRadius: 14, border: "1px solid",
-                borderColor: addMode === m.key ? "#f97316" : "rgba(255,255,255,0.1)",
-                background: addMode === m.key ? "rgba(249,115,22,0.15)" : "rgba(255,255,255,0.03)",
-                color: addMode === m.key ? "#f97316" : "rgba(255,255,255,0.5)",
-                fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14,
-                cursor: "pointer", transition: "all 0.2s"
-              }}>{m.label}</button>
-            ))}
-          </div>
-
-          {/* MODE PHOTO */}
-          {addMode === "photo" && (
-            <div>
-              <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }}
-                onChange={e => e.target.files[0] && analyzePhoto(e.target.files[0])} />
-              {!photoResult && !photoLoading && (
-                <button onClick={() => fileRef.current.click()} style={{
-                  width: "100%", padding: "48px 0", borderRadius: 20,
-                  border: "2px dashed rgba(249,115,22,0.3)", background: "rgba(249,115,22,0.05)",
-                  color: "rgba(255,255,255,0.6)", fontSize: 14, cursor: "pointer",
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
-                  fontFamily: "'DM Sans', sans-serif"
-                }}>
-                  <span style={{ fontSize: 48 }}>📷</span>
-                  <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "#f97316", fontSize: 16 }}>Prendre une photo</span>
-                  <span>ou importer depuis ta galerie</span>
-                </button>
-              )}
-              {photoLoading && (
-                <div style={{ textAlign: "center", padding: 48 }}>
-                  <div style={{ fontSize: 48, animation: "spin 1s linear infinite", display: "inline-block" }}>🔍</div>
-                  <p style={{ color: "rgba(255,255,255,0.5)", marginTop: 16 }}>Analyse IA en cours…</p>
-                </div>
-              )}
-              {photoResult && (
-                <MacroCard result={photoResult} setResult={setPhotoResult} onAdd={addMeal}
-                  onRetry={() => { setPhotoResult(null); fileRef.current.click(); }} retryLabel="Nouvelle photo" />
-              )}
-            </div>
-          )}
-
-          {/* MODE SAISIE */}
-          {addMode === "manual" && (
-            <div>
-              {!manualResult ? (
-                <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 20 }}>
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={labelStyle}>Nom de l'aliment *</label>
-                    <input type="text" placeholder="ex: Blanc de poulet, Riz basmati, Yaourt…"
-                      value={manualFood.name}
-                      onChange={e => setManualFood(p => ({ ...p, name: e.target.value }))}
-                      style={inputStyle} />
-                  </div>
-                  <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-                    <div style={{ flex: 2 }}>
-                      <label style={labelStyle}>Quantité *</label>
-                      <input type="number" placeholder="ex: 150"
-                        value={manualFood.quantity}
-                        onChange={e => setManualFood(p => ({ ...p, quantity: e.target.value }))}
-                        style={inputStyle} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={labelStyle}>Unité</label>
-                      <select value={manualFood.unit} onChange={e => setManualFood(p => ({ ...p, unit: e.target.value }))} style={inputStyle}>
-                        {["g", "ml", "cl", "portion", "tranche", "unité"].map(u => <option key={u} value={u}>{u}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={labelStyle}>Marque <span style={{ color: "rgba(255,255,255,0.2)", textTransform: "none", letterSpacing: 0, fontSize: 11 }}>(optionnel)</span></label>
-                    <input type="text" placeholder="ex: Danone, Bjorg, Fleury Michon…"
-                      value={manualFood.brand}
-                      onChange={e => setManualFood(p => ({ ...p, brand: e.target.value }))}
-                      style={inputStyle} />
-                  </div>
-                  <div style={{ marginBottom: 20 }}>
-                    <label style={labelStyle}>Type de repas</label>
-                    <select value={manualFood.meal} onChange={e => setManualFood(p => ({ ...p, meal: e.target.value }))} style={inputStyle}>
-                      {MEAL_TYPES.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                  </div>
-                  <button onClick={lookupFood} disabled={!manualFood.name || !manualFood.quantity || manualLoading} style={{
-                    width: "100%", padding: 14, borderRadius: 14, border: "none",
-                    background: "linear-gradient(135deg, #f97316, #ef4444)",
-                    color: "#fff", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16,
-                    cursor: "pointer", boxShadow: "0 4px 20px #f9731640",
-                    opacity: (!manualFood.name || !manualFood.quantity || manualLoading) ? 0.4 : 1,
-                    transition: "opacity 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 10
-                  }}>
-                    {manualLoading
-                      ? <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⚙️</span> Calcul en cours…</>
-                      : "🔍 Calculer les calories"}
-                  </button>
-                </div>
-              ) : (
-                <MacroCard result={manualResult} setResult={setManualResult} onAdd={addMeal}
-                  onRetry={() => setManualResult(null)} retryLabel="← Modifier" />
-              )}
-            </div>
-          )}
-        </div>
-        <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}} select option{background:#1a1a2e;color:#fff;} input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0} input[type=number]{-moz-appearance:textfield}`}</style>
-      </div>
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════════
-  // HOME
-  // ══════════════════════════════════════════════════════════════════════════════
-  return (
-    <div style={{ minHeight: "100vh", background: "#0a0a0f", fontFamily: "'DM Sans', sans-serif", paddingBottom: 110 }}>
-      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-      {toast && <Toast toast={toast} />}
-
-      <div style={{ padding: "20px 20px 0", maxWidth: 480, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+      <div class="card-orange">
+        <div style="position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(249,115,22,0.06);pointer-events:none"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
           <div>
-            <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#fff", margin: 0, fontSize: 26 }}>MassTrack 🔥</h1>
-            <p style={{ color: "rgba(255,255,255,0.3)", margin: "2px 0 0", fontSize: 12 }}>
-              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+            <p style="color:rgba(255,255,255,0.4);margin:0;font-size:12px;text-transform:uppercase;letter-spacing:1px">Calories aujourd'hui</p>
+            <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+              <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:42px">${Math.round(totalCal)}</span>
+              <span style="color:rgba(255,255,255,0.3);font-size:16px">/ ${g.target||'–'} kcal</span>
+            </div>
+            <p style="margin:4px 0 0;font-size:13px;color:${rem>=0?'#22c55e':'#ef4444'};font-weight:600">
+              ${rem>=0 ? `${Math.round(rem)} kcal restantes` : `${Math.abs(Math.round(rem))} kcal dépassées`}
             </p>
           </div>
-          <button onClick={() => setScreen("profile")} style={{
-            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-            color: "rgba(255,255,255,0.6)", padding: "6px 14px", borderRadius: 10,
-            cursor: "pointer", fontSize: 12, fontFamily: "'DM Sans', sans-serif"
-          }}>⚙️ Profil</button>
+          <div style="position:relative">
+            <svg width="90" height="90" style="transform:rotate(-90deg)">
+              <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="9"/>
+              <circle cx="45" cy="45" r="38" fill="none" stroke="${pct>100?'#ef4444':'#f97316'}" stroke-width="9"
+                stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:16px">${Math.round(pct)}%</span>
+            </div>
+          </div>
+        </div>
+        <div class="pbar-track">
+          <div class="pbar-fill" style="width:${pct}%;background:${pct>100?'#ef4444':'linear-gradient(90deg,#f97316,#ef4444)'};box-shadow:0 0 12px rgba(249,115,22,0.5)"></div>
         </div>
       </div>
 
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "16px 20px 0" }}>
-
-        {/* Carte calories */}
-        <div style={{
-          background: "linear-gradient(135deg, rgba(249,115,22,0.12), rgba(239,68,68,0.08))",
-          border: "1px solid rgba(249,115,22,0.2)", borderRadius: 24, padding: 24, marginBottom: 14,
-          position: "relative", overflow: "hidden"
-        }}>
-          <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(249,115,22,0.06)", pointerEvents: "none" }} />
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <div>
-              <p style={{ color: "rgba(255,255,255,0.4)", margin: 0, fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Calories aujourd'hui</p>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 4 }}>
-                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 42, color: "#fff" }}>{Math.round(totalCal)}</span>
-                <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 16 }}>/ {goal?.target} kcal</span>
-              </div>
-              <p style={{ margin: "4px 0 0", fontSize: 13, color: remaining >= 0 ? "#22c55e" : "#ef4444", fontWeight: 600 }}>
-                {remaining >= 0 ? `${Math.round(remaining)} kcal restantes` : `${Math.abs(Math.round(remaining))} kcal dépassées`}
-              </p>
+      <div class="card-dark">
+        <p class="section-label">Macronutriments</p>
+        ${g.target ? [
+          {label:'Protéines',val:totalProt,max:g.proteins,color:'#f97316'},
+          {label:'Glucides',val:totalCarbs,max:g.carbs,color:'#3b82f6'},
+          {label:'Lipides',val:totalFats,max:g.fats,color:'#a855f7'},
+        ].map(x=>`
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;color:rgba(255,255,255,0.6)">${x.label}</span>
+              <span style="font-size:12px;color:${x.color};font-family:'Syne',sans-serif;font-weight:700">${Math.round(x.val)}g / ${x.max}g</span>
             </div>
-            <div style={{ position: "relative" }}>
-              <svg width={90} height={90} style={{ transform: "rotate(-90deg)" }}>
-                <circle cx={45} cy={45} r={38} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={9} />
-                <circle cx={45} cy={45} r={38} fill="none"
-                  stroke={pctCal > 100 ? "#ef4444" : "#f97316"} strokeWidth={9}
-                  strokeDasharray={2 * Math.PI * 38}
-                  strokeDashoffset={2 * Math.PI * 38 * (1 - pctCal / 100)}
-                  strokeLinecap="round"
-                  style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1)" }} />
-              </svg>
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16, color: "#fff" }}>{Math.round(pctCal)}%</span>
-              </div>
+            <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden">
+              <div style="height:100%;width:${Math.min((x.val/x.max)*100,100)}%;background:${x.color};border-radius:6px;box-shadow:0 0 8px ${x.color}80"></div>
             </div>
-          </div>
-          <div style={{ height: 8, background: "rgba(255,255,255,0.08)", borderRadius: 8, overflow: "hidden" }}>
-            <div style={{
-              height: "100%", width: `${pctCal}%`,
-              background: pctCal > 100 ? "#ef4444" : "linear-gradient(90deg, #f97316, #ef4444)",
-              borderRadius: 8, transition: "width 0.8s cubic-bezier(.4,0,.2,1)",
-              boxShadow: "0 0 12px #f9731650"
-            }} />
-          </div>
-        </div>
-
-        {/* Macros */}
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 20, marginBottom: 14 }}>
-          <p style={{ color: "rgba(255,255,255,0.4)", margin: "0 0 14px", fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Macronutriments</p>
-          {goal && <>
-            <CalBar label="Protéines" value={totalProt} max={goal.proteins} color="#f97316" />
-            <CalBar label="Glucides" value={totalCarbs} max={goal.carbs} color="#3b82f6" />
-            <CalBar label="Lipides" value={totalFats} max={goal.fats} color="#a855f7" />
-          </>}
-        </div>
-
-        {/* Objectif */}
-        {goal && (
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 16, marginBottom: 18 }}>
-            <p style={{ color: "rgba(255,255,255,0.4)", margin: "0 0 12px", fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>🎯 Objectif prise de masse</p>
-            <div style={{ display: "flex", justifyContent: "space-around" }}>
-              {[
-                { label: "Maintenance", value: goal.tdee, unit: "kcal" },
-                { label: "Surplus", value: "+400", unit: "kcal" },
-                { label: "Objectif", value: goal.target, unit: "kcal", highlight: true },
-              ].map(({ label, value, unit, highlight }) => (
-                <div key={label} style={{ textAlign: "center" }}>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 18, color: highlight ? "#f97316" : "#fff" }}>{value}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{unit}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Journal */}
-        <div style={{ marginBottom: 16 }}>
-          <p style={{ color: "rgba(255,255,255,0.4)", margin: "0 0 12px", fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Journal du jour</p>
-          {todayMeals.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 32, color: "rgba(255,255,255,0.2)", fontSize: 14 }}>
-              Aucun repas ajouté.<br />Commence à logger ! 💪
-            </div>
-          ) : (
-            MEAL_TYPES.map(mealType => {
-              const items = todayMeals.filter(m => m.meal === mealType);
-              if (!items.length) return null;
-              const mealCal = items.reduce((s, i) => s + (i.calories || 0), 0);
-              return (
-                <div key={mealType} style={{ marginBottom: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{mealType}</span>
-                    <span style={{ fontSize: 12, color: "#f97316", fontWeight: 600 }}>{Math.round(mealCal)} kcal</span>
-                  </div>
-                  {items.map(item => (
-                    <div key={item.id} style={{
-                      background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
-                      borderRadius: 14, padding: "12px 16px", marginBottom: 8,
-                      display: "flex", justifyContent: "space-between", alignItems: "center"
-                    }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span style={{ fontWeight: 600, color: "#fff", fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</span>
-                          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", flexShrink: 0 }}>{item.time}</span>
-                        </div>
-                        <div style={{ display: "flex", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
-                          {item.proteins > 0 && <span style={{ fontSize: 11, color: "#f97316" }}>P: {item.proteins}g</span>}
-                          {item.carbs > 0 && <span style={{ fontSize: 11, color: "#3b82f6" }}>G: {item.carbs}g</span>}
-                          {item.fats > 0 && <span style={{ fontSize: 11, color: "#a855f7" }}>L: {item.fats}g</span>}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, marginLeft: 8 }}>
-                        <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#f97316", fontSize: 16 }}>{item.calories}</span>
-                        <button onClick={() => setMeals(prev => prev.filter(m => m.id !== item.id))}
-                          style={{ background: "rgba(239,68,68,0.1)", border: "none", color: "#ef4444", width: 28, height: 28, borderRadius: 8, cursor: "pointer", fontSize: 16 }}>×</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })
-          )}
-        </div>
+          </div>`).join('') : '<p style="color:rgba(255,255,255,0.3);font-size:13px">Configure ton profil pour voir tes macros</p>'}
       </div>
 
-      <button onClick={() => setScreen("add")} style={{
-        position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)",
-        background: "linear-gradient(135deg, #f97316, #ef4444)",
-        border: "none", color: "#fff", borderRadius: 50, padding: "16px 32px",
-        fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 16,
-        cursor: "pointer", boxShadow: "0 8px 32px rgba(249,115,22,0.5)",
-        display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap"
-      }}>
-        <span style={{ fontSize: 20 }}>+</span> Ajouter un repas
-      </button>
+      ${g.target ? `
+      <div class="card-dark" style="padding:16px">
+        <p class="section-label">🎯 Objectif prise de masse</p>
+        <div style="display:flex;justify-content:space-around">
+          ${[{label:'Maintenance',val:g.tdee,unit:'kcal'},{label:'Surplus',val:'+400',unit:'kcal'},{label:'Objectif',val:g.target,unit:'kcal',hl:true}].map(x=>`
+          <div style="text-align:center">
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:${x.hl?'#f97316':'#fff'}">${x.val}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px">${x.unit}</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:1px">${x.label}</div>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
 
-      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}} select option{background:#1a1a2e;color:#fff;}`}</style>
+      <div style="margin-bottom:16px">
+        <p class="section-label">Journal du jour</p>
+        ${journalHtml}
+      </div>
     </div>
-  );
+    <button id="fab">
+      <span style="font-size:20px">+</span> Ajouter un repas
+    </button>
+  </div>`;
 }
 
-const labelStyle = {
-  display: "block", marginBottom: 6, fontSize: 12,
-  color: "rgba(255,255,255,0.4)", textTransform: "uppercase",
-  letterSpacing: 1, fontFamily: "'DM Sans', sans-serif"
-};
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-const inputStyle = {
-  width: "100%", padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.05)", color: "#fff", fontSize: 15,
-  fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box",
-  appearance: "none", WebkitAppearance: "none"
-};
+function calcGoal() {
+  const p = state.profile;
+  if (!p.age||!p.weight||!p.height) return;
+  const a=+p.age, w=+p.weight, h=+p.height, act=+p.activity;
+  const bmr = p.sex==='homme' ? 88.362+13.397*w+4.799*h-5.677*a : 447.593+9.247*w+3.098*h-4.330*a;
+  const tdee = bmr*act;
+  const target = Math.round(tdee+400);
+  const proteins = Math.round(w*2.2);
+  const fats = Math.round((target*0.25)/9);
+  const carbs = Math.round((target-proteins*4-fats*9)/4);
+  state.goal = {target,proteins,carbs,fats,tdee:Math.round(tdee)};
+  save();
+  showToast('Profil sauvegardé ✓');
+  state.screen='home';
+  render();
+}
 
+function addMeal(food) {
+  const entry = {...food, id:Date.now(), day:today, time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})};
+  state.meals.push(entry);
+  state.photoResult = null;
+  state.manualResult = null;
+  state.manualFood = {name:'',quantity:'',unit:'g',brand:'',meal:'Déjeuner'};
+  save();
+  showToast(`${food.name} ajouté !`);
+  state.screen='home';
+  render();
+}
 
-    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
-  </script>
+async function lookupFood() {
+  const f = state.manualFood;
+  if (!f.name||!f.quantity) return;
+  state.manualLoading = true;
+  render();
+  try {
+    const prompt = `Calcule les valeurs nutritionnelles pour:\n- Aliment: ${f.name}\n- Quantité: ${f.quantity} ${f.unit}\n${f.brand?`- Marque: ${f.brand}`:''}\n\nRéponds UNIQUEMENT en JSON valide, sans markdown ni backticks:\n{"name":"nom complet","calories":nombre,"proteins":nombre,"carbs":nombre,"fats":nombre,"fiber":nombre,"per_unit":"${f.quantity}${f.unit}","confidence":"haute/moyenne/basse","note":"info utile si besoin"}\nToutes les valeurs en nombres entiers.`;
+    const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    const data = await res.json();
+    const text = data.content?.map(c=>c.text||'').join('')||'';
+    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+    state.manualResult = {...parsed, meal:f.meal};
+  } catch { showToast('Aliment non reconnu, réessaie','err'); }
+  state.manualLoading = false;
+  render();
+}
+
+async function analyzePhoto(file) {
+  state.photoLoading = true;
+  render();
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const base64 = e.target.result.split(',')[1];
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:file.type,data:base64}},{type:'text',text:'Analyse cet aliment. Réponds UNIQUEMENT en JSON valide sans markdown:\n{"name":"nom","calories":nombre,"proteins":nombre,"carbs":nombre,"fats":nombre,"fiber":nombre,"details":"description","confidence":"haute/moyenne/basse"}'}]}]})});
+      const data = await res.json();
+      const text = data.content?.map(c=>c.text||'').join('')||'';
+      const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+      state.photoResult = {...parsed, meal:'Déjeuner'};
+    } catch { showToast("Erreur d'analyse, réessaie",'err'); }
+    state.photoLoading = false;
+    render();
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── Event binding ────────────────────────────────────────────────────────────
+function bindEvents() {
+  // Profile
+  document.querySelectorAll('[data-sex]').forEach(b=>b.addEventListener('click',()=>{
+    state.profile.sex=b.dataset.sex; render();
+  }));
+  document.querySelectorAll('[data-activity]').forEach(b=>b.addEventListener('click',()=>{
+    state.profile.activity=+b.dataset.activity; render();
+  }));
+  document.querySelectorAll('[data-field]').forEach(inp=>inp.addEventListener('input',()=>{
+    state.profile[inp.dataset.field]=inp.value; render();
+  }));
+  document.getElementById('btn-calc')?.addEventListener('click', calcGoal);
+  document.getElementById('btn-back-home')?.addEventListener('click',()=>{ state.screen='home'; render(); });
+
+  // Home
+  document.getElementById('btn-profile')?.addEventListener('click',()=>{ state.screen='profile'; render(); });
+  document.getElementById('fab')?.addEventListener('click',()=>{ state.screen='add'; render(); });
+  document.querySelectorAll('.btn-del').forEach(b=>b.addEventListener('click',()=>{
+    const id=+b.dataset.id;
+    state.meals=state.meals.filter(m=>m.id!==id);
+    save(); render();
+  }));
+
+  // Add screen
+  document.getElementById('btn-back')?.addEventListener('click',()=>{ state.screen='home'; render(); });
+  document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{
+    state.addMode=b.dataset.mode; state.photoResult=null; state.manualResult=null; render();
+  }));
+
+  // Photo
+  document.getElementById('photo-input')?.addEventListener('change',e=>{
+    if(e.target.files[0]) analyzePhoto(e.target.files[0]);
+  });
+  document.getElementById('btn-retry-photo')?.addEventListener('click',()=>{
+    state.photoResult=null; render();
+  });
+
+  // Manual
+  document.getElementById('food-name')?.addEventListener('input',e=>{ state.manualFood.name=e.target.value; });
+  document.getElementById('food-qty')?.addEventListener('input',e=>{ state.manualFood.quantity=e.target.value; });
+  document.getElementById('food-unit')?.addEventListener('change',e=>{ state.manualFood.unit=e.target.value; });
+  document.getElementById('food-brand')?.addEventListener('input',e=>{ state.manualFood.brand=e.target.value; });
+  document.getElementById('food-meal')?.addEventListener('change',e=>{ state.manualFood.meal=e.target.value; });
+  document.getElementById('btn-lookup')?.addEventListener('click', lookupFood);
+  document.getElementById('btn-retry-manual')?.addEventListener('click',()=>{ state.manualResult=null; render(); });
+
+  // Result
+  document.getElementById('result-meal')?.addEventListener('change',e=>{
+    if(state.photoResult) state.photoResult.meal=e.target.value;
+    if(state.manualResult) state.manualResult.meal=e.target.value;
+  });
+  document.getElementById('btn-add-meal')?.addEventListener('click',()=>{
+    const food = state.photoResult || state.manualResult;
+    if(food) addMeal(food);
+  });
+}
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+render();
+</script>
 </body>
 </html>
